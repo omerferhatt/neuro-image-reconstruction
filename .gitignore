@@ -1,2 +1,13 @@
 # Project exclude paths
 /data/
+.idea/.gitignore
+.idea/inspectionProfiles/
+.idea/misc.xml
+.idea/modules.xml
+.idea/neuro-image-reconstruction.iml
+.idea/other.xml
+.idea/vcs.xml
+.tmp/
+image-net/
+models/
+notebooks/
