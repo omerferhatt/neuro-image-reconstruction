@@ -11,3 +11,5 @@
 image-net/
 models/
 notebooks/
+.idea/workspace.xml
+mind-big-data/MindBigData-Imagenet
