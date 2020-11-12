@@ -4,6 +4,9 @@ import argparse
 import pandas as pd
 from tqdm.auto import tqdm
 
+# All paths will be relative to root folder of project
+os.chdir('..')
+
 
 class DatasetWNParser:
     """
