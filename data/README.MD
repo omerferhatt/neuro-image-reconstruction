@@ -3,7 +3,7 @@
 It maps original .csv files with real ILSVRC2013 Training images
 
     e.g. 
-        File name          : ... MindBigData_Imagenet_Insight_n00007846_6247_1_785
+        File name          : ... MindBigData_Imagenet_Insight_n00007846_6247_1_785.csv
         Imagenet file path : ... n00007846/n00007846_6247.JPEG
         
 ### What is the output of this script?
