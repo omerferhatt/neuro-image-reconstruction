@@ -1,5 +1,4 @@
 # Project exclude paths
-/data/
 .idea/.gitignore
 .idea/inspectionProfiles/
 .idea/misc.xml
@@ -7,10 +6,10 @@
 .idea/neuro-image-reconstruction.iml
 .idea/other.xml
 .idea/vcs.xml
-.tmp/
-image-net/
-models/
-notebooks/
 .idea/workspace.xml
-mind-big-data/MindBigData-Imagenet
-mind-big-data/data/
+.idea/shelf/
+.tmp/
+
+notebooks/
+data/mind-big-data
+data/WordReport-v1.04.txt
