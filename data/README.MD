@@ -21,8 +21,8 @@ It saves all mapped and sliced information to a .csv file
 Just run script with parameters
    
     e.g.
-    $ python3 dataset_organizer.py --data-dir-path mind-big-data/data --local-inet-path ~/imagenet --csv-save-path mind-big-data/dataset.csv
+    $ python3 dataset_organizer.py --data-dir-path data/mind-big-data --local-inet-path ~/imagenet --csv-save-path data/dataset.csv
 
-    --data-dir-path:    Path to directory which includes all .csv files in it   (default: mind-big-data/data)
+    --data-dir-path:    Path to directory which includes all .csv files in it   (default: data/mind-big-data)
     --local-inet-path:  Path to local ILSVRC 2013 Training folder               (default: None)
-    --csv-save-path:    Output save path                                        (default: mind-big-data/dataset.csv)
+    --csv-save-path:    Output save path                                        (default: data/dataset.csv)
