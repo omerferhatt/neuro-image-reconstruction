@@ -23,9 +23,9 @@
 import os
 import random
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from PIL import Image
 
 # All paths will be relative to root folder of project
@@ -105,7 +105,8 @@ class Pipeline:
 			# This process needed for removing some noise from data
 			_eeg_sig = _eeg_sig[:, 32:378]
 			# Min-Max normalization within channel
-			_eeg_sig = np.asarray([(_channel - np.min(_channel)) / (np.max(_channel) - np.min(_channel)) for _channel in _eeg_sig])
+			_eeg_sig = np.asarray(
+				[(_channel - np.min(_channel)) / (np.max(_channel) - np.min(_channel)) for _channel in _eeg_sig])
 			# Reading and resizing image to (224, 224). This resolution is compatible with most of state of art models
 			# e.g. ResNet, VGGNet etc.
 			_img = Image.open(_inet_path).resize((224, 224))
