@@ -3,3 +3,4 @@ tqdm~=4.50.2
 numpy~=1.19.2
 pillow~=8.0.1
 matplotlib~=3.3.2
+tensorflow~=2.3.0
