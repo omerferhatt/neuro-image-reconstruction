@@ -380,8 +380,6 @@ class DiscriminatorNet(tf.keras.Model):
 		super(DiscriminatorNet, self).__init__(inputs=self.input_discriminator, outputs=self.out,
 											   name='discriminator_net', *args, **kwargs)
 
-		self.optimizer = Adam(learning_rate=0.0002)
-
 	def build(self, *args, **kwargs):
 		self._is_graph_network = True
 		self._init_graph_network(
@@ -443,15 +441,10 @@ class AdverserialNet(tf.keras.Model):
 		# Generator and Discriminator net
 		self.generator_net = GeneratorNet(batch_shape=self.input_adverserial.shape)
 		self.discriminator_net = DiscriminatorNet(batch_shape=self.generator_net.output_shape)
-		# Compiling discriminator individually
-		self.set_discriminator_net()
-		# Compiling adversarial network
 
 		self.out = self.call(self.input_adverserial)
 		super(AdverserialNet, self).__init__(inputs=self.input_adverserial, outputs=self.out,
 											 name='adverserial_net', *args, **kwargs)
-		self.optimizer = Adam(learning_rate=0.0004)
-		self.compile(optimizer=self.optimizer, loss='binary_crossentropy', metrics=['acc'])
 
 	def build(self, *args, **kwargs):
 		self._is_graph_network = True
@@ -467,10 +460,6 @@ class AdverserialNet(tf.keras.Model):
 
 	def get_config(self):
 		pass
-
-	def set_discriminator_net(self):
-		self.discriminator_net.compile(self.discriminator_net.optimizer, loss='binary_crossentropy', metrics=['acc'])
-		self.discriminator_net.trainable = False
 
 
 if __name__ == '__main__':
