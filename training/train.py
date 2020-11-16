@@ -17,29 +17,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
+
+from data.data_pipeline import Pipeline
 from model.net import AdverserialNet
 
 
 class Train:
-	def __init__(self, model=AdverserialNet, epoch=50, batch_size=1):
+	def __init__(self, model: AdverserialNet, data: Pipeline, epoch=50, batch_size=1):
+		self.pipeline = data
 		# Training parameters
 		self.epoch = epoch
 		self.batch_size = batch_size
+		self.step_size = self.pipeline.total_record // self.batch_size
 		# Main adverserial and sub-models
 		self.adverserial = model
-		self.discriminator = self.adverserial.discriminator
-		self.generator = self.adverserial.generator
-		self.encoder = self.generator.encoder
-		self.decoder = self.generator.decoder
+		self.discriminator = self.adverserial.discriminator_net
+		self.generator = self.adverserial.generator_net
+		self.encoder = self.generator.encoder_net
+		self.decoder = self.generator.decoder_net
 		# Optimizers
-		self.discriminator_opt = None
-		self.adverserial_opt = None
+		self.discriminator_opt = tf.keras.optimizers.Adam(learning_rate=0.0005)
+		self.adverserial_opt = tf.keras.optimizers.Adam(learning_rate=0.001)
 		# Loss function
-		self.loss_func = None
+		self.loss_func = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 		# Metrics
-		self.discriminator_acc = None
-		self.adversarial_acc = None
+		self.discriminator_acc = tf.keras.metrics.BinaryAccuracy()
+		self.adversarial_acc = tf.keras.metrics.BinaryAccuracy()
 		# History logs
 		self.discriminator_hist = []
 		self.adversarial_hist = []
@@ -62,7 +68,7 @@ class Train:
 			disc_logits = self.discriminator(gen_out, training=False)
 			loss_value = self.loss_func(y, disc_logits)
 		grads = tape.gradient(loss_value, self.generator.trainable_weights)
-		self.adverserial.opt.apply_gradients(zip(grads, self.generator.trainable_weights))
+		self.adverserial_opt.apply_gradients(zip(grads, self.generator.trainable_weights))
 		self.adversarial_acc.update_state(y, disc_logits)
 		self.adversarial_hist.append([loss_value])
 		return loss_value
@@ -82,5 +88,19 @@ class Train:
 
 	def train(self):
 		for epoch in range(self.epoch):
-			pass
-		# TODO: Add training loop to here
+			print(f"Epoch: {epoch}")
+			for step in range(self.step_size):
+				eeg_signal, image = next(self.pipeline.generator)
+				disc_loss, gen_loss, generated_im = self.train_on_batch(image, eeg_signal)
+				if step % 100 == 0 and step != 0:
+					print(f"Step: {step}")
+					print(f"discriminator_loss:{np.array(disc_loss):.4f}\t generator_loss:{np.array(gen_loss):.4f}\n")
+					plt.imshow(generated_im[0, :, :, :])
+					plt.show()
+
+
+if __name__ == '__main__':
+	pipeline = Pipeline('data/dataset.csv', shuffle=10)
+	adv_net = AdverserialNet(batch_shape=(1, 345, 5))
+	trainer = Train(model=adv_net, data=pipeline)
+	trainer.train()

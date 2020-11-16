@@ -106,12 +106,18 @@ class Pipeline:
 			_eeg_sig = _eeg_sig[:, 32:378]
 			# Min-Max normalization within channel
 			_eeg_sig = np.asarray(
-				[(_channel - np.min(_channel)) / (np.max(_channel) - np.min(_channel)) for _channel in _eeg_sig])
+				[(_channel - np.min(_channel)) / (np.max(_channel) - np.min(_channel)) for _channel in _eeg_sig],
+				dtype=np.float32
+			)
+			_eeg_sig = _eeg_sig.T
+			_eeg_sig = _eeg_sig[np.newaxis, :, :]
 			# Reading and resizing image to (224, 224). This resolution is compatible with most of state of art model
 			# e.g. ResNet, VGGNet etc.
-			_img = Image.open(_inet_path).resize((224, 224))
+			_img = Image.open(_inet_path).resize((256, 256))
+			if _img.mode != 'RGB':
+				_img = _img.convert('RGB')
 			# Creating batch channel
-			_img = np.asarray(_img)[np.newaxis, :, :, :]
+			_img = np.asarray(_img, dtype=np.float32)[np.newaxis, :, :, :]
 			# Min-Max normalization in image
 			_img = (_img - np.min(_img)) / (np.max(_img) - np.min(_img))
 			_img_sig = [_eeg_sig, _img]

@@ -13,3 +13,7 @@
 notebooks/
 data/mind-big-data
 /data/imagenet/
+/data/mind-big-data-imagenet/
+data/__pycache__/
+model/__pycache__/
+model/model.png

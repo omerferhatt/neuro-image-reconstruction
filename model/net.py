@@ -23,7 +23,6 @@ from tensorflow.keras.layers import Conv1D, Conv2D, Conv2DTranspose, Add
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import GlobalAvgPool1D, GlobalAvgPool2D, AvgPool1D, MaxPool2D
 from tensorflow.keras.layers import Input
-from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import L1L2
 
 
@@ -148,13 +147,13 @@ class DecoderNet(tf.keras.Model):
 		self.block1_activation = tf.nn.relu
 		# Layers
 		self.block1_b_norm_1 = BatchNormalization(name=self.block1_name + '_b_norm_1')
-		self.block1_deconv_1 = Conv2DTranspose(64, kernel_size=5, padding=self.block1_padding,
-											   activation=self.block1_activation,
-											   name=self.block1_name + '_deconv1')
+		self.block1_deconv_1 = Conv2D(64, kernel_size=5, padding=self.block1_padding,
+									  activation=self.block1_activation,
+									  name=self.block1_name + '_deconv1')
 		self.block1_b_norm_2 = BatchNormalization(name=self.block1_name + '_b_norm_2')
-		self.block1_deconv_2 = Conv2DTranspose(64, kernel_size=5, padding=self.block1_padding,
-											   activation=self.block1_activation,
-											   name=self.block1_name + '_deconv2')
+		self.block1_deconv_2 = Conv2D(64, kernel_size=5, padding=self.block1_padding,
+									  activation=self.block1_activation,
+									  name=self.block1_name + '_deconv2')
 		self.block1_b_norm_3 = BatchNormalization(name=self.block1_name + '_b_norm_3')
 		self.block1_add = Add(name=self.block1_name + '_add')
 		self.block1_deconv_3 = Conv2DTranspose(64, kernel_size=5, strides=2, padding=self.block1_padding,
@@ -167,16 +166,16 @@ class DecoderNet(tf.keras.Model):
 		self.block2_activation = tf.nn.relu
 		# Layers
 		self.block2_b_norm_1 = BatchNormalization(name=self.block2_name + '_b_norm_1')
-		self.block2_deconv_1 = Conv2DTranspose(128, kernel_size=4, padding=self.block2_padding,
-											   activation=self.block2_activation,
-											   name=self.block2_name + '_deconv1')
+		self.block2_deconv_1 = Conv2D(128, kernel_size=4, padding=self.block2_padding,
+									  activation=self.block2_activation,
+									  name=self.block2_name + '_deconv1')
 		self.block2_b_norm_2 = BatchNormalization(name=self.block2_name + '_b_norm_2')
-		self.block2_deconv_2 = Conv2DTranspose(128, kernel_size=4, padding=self.block2_padding,
-											   activation=self.block2_activation,
-											   name=self.block2_name + '_deconv2')
+		self.block2_deconv_2 = Conv2D(128, kernel_size=4, padding=self.block2_padding,
+									  activation=self.block2_activation,
+									  name=self.block2_name + '_deconv2')
 		self.block2_b_norm_3 = BatchNormalization(name=self.block2_name + '_b_norm_3')
 		self.block2_add = Add(name=self.block2_name + '_add')
-		self.block2_deconv_3 = Conv2DTranspose(64, kernel_size=4, strides=2, padding=self.block2_padding,
+		self.block2_deconv_3 = Conv2DTranspose(128, kernel_size=4, strides=2, padding=self.block2_padding,
 											   activation=self.block2_activation,
 											   name=self.block2_name + '_deconv3')
 
@@ -186,13 +185,13 @@ class DecoderNet(tf.keras.Model):
 		self.block3_activation = tf.nn.relu
 		# Layers
 		self.block3_b_norm_1 = BatchNormalization(name=self.block3_name + '_b_norm_1')
-		self.block3_deconv_1 = Conv2DTranspose(64, kernel_size=4, padding=self.block3_padding,
-											   activation=self.block3_activation,
-											   name=self.block3_name + '_deconv1')
+		self.block3_deconv_1 = Conv2D(64, kernel_size=4, padding=self.block3_padding,
+									  activation=self.block3_activation,
+									  name=self.block3_name + '_deconv1')
 		self.block3_b_norm_2 = BatchNormalization(name=self.block3_name + '_b_norm_2')
-		self.block3_deconv_2 = Conv2DTranspose(64, kernel_size=4, padding=self.block3_padding,
-											   activation=self.block3_activation,
-											   name=self.block3_name + '_deconv2')
+		self.block3_deconv_2 = Conv2D(64, kernel_size=4, padding=self.block3_padding,
+									  activation=self.block3_activation,
+									  name=self.block3_name + '_deconv2')
 		self.block3_b_norm_3 = BatchNormalization(name=self.block3_name + '_b_norm_3')
 		self.block3_add = Add(name=self.block3_name + '_add')
 		self.block3_deconv_3 = Conv2DTranspose(64, kernel_size=4, strides=2, padding=self.block3_padding,
@@ -205,20 +204,20 @@ class DecoderNet(tf.keras.Model):
 		self.block4_activation = tf.nn.relu
 		# Layers
 		self.block4_b_norm_1 = BatchNormalization(name=self.block4_name + '_b_norm_1')
-		self.block4_deconv_1 = Conv2DTranspose(32, kernel_size=5, padding=self.block4_padding,
-											   activation=self.block4_activation,
-											   name=self.block4_name + '_deconv1')
+		self.block4_deconv_1 = Conv2D(32, kernel_size=4, padding=self.block4_padding,
+									  activation=self.block4_activation,
+									  name=self.block4_name + '_deconv1')
 		self.block4_b_norm_2 = BatchNormalization(name=self.block4_name + '_b_norm_2')
-		self.block4_deconv_2 = Conv2DTranspose(32, kernel_size=5, padding=self.block4_padding,
-											   activation=self.block4_activation,
-											   name=self.block4_name + '_deconv2')
+		self.block4_deconv_2 = Conv2D(32, kernel_size=4, padding=self.block4_padding,
+									  activation=self.block4_activation,
+									  name=self.block4_name + '_deconv2')
 		self.block4_b_norm_3 = BatchNormalization(name=self.block4_name + '_b_norm_3')
 		self.block4_add = Add(name=self.block4_name + '_add')
-		self.block4_deconv_3 = Conv2DTranspose(32, kernel_size=5, strides=2, padding=self.block4_padding,
+		self.block4_deconv_3 = Conv2DTranspose(32, kernel_size=4, strides=2, padding=self.block4_padding,
 											   activation=self.block4_activation,
 											   name=self.block4_name + '_deconv3')
-		self.block4_conv = Conv2DTranspose(3, kernel_size=1, padding=self.block4_padding, activation=tf.nn.tanh,
-										   name=self.block4_name + '_conv')
+		self.block4_conv = Conv2D(3, kernel_size=1, padding=self.block4_padding, activation=tf.nn.tanh,
+								  name=self.block4_name + '_conv')
 
 		self.out = self.call(self.input_decoder)
 		super(DecoderNet, self).__init__(inputs=self.input_decoder, outputs=self.out,
@@ -311,14 +310,14 @@ class DiscriminatorNet(tf.keras.Model):
 		self.block1_activation = tf.nn.relu
 		# Layers
 		self.block1_b_norm_1 = BatchNormalization(name=self.block1_name + '_b_norm_1')
-		self.block1_conv_1 = Conv2D(64, kernel_size=4, padding=self.block1_padding,
+		self.block1_conv_1 = Conv2D(64, kernel_size=3, padding=self.block1_padding,
 									activation=self.block1_activation,
 									name=self.block1_name + '_conv1')
 		self.block1_b_norm_2 = BatchNormalization(name=self.block1_name + '_b_norm_2')
 		self.block1_conv_2 = Conv2D(64, kernel_size=3, padding=self.block1_padding, activation=self.block1_activation,
 									name=self.block1_name + '_conv2')
 		self.block1_b_norm_3 = BatchNormalization(name=self.block1_name + '_b_norm_3')
-		self.block1_conv_3 = Conv2D(64, kernel_size=3, padding=self.block1_padding, activation=self.block1_activation,
+		self.block1_conv_3 = Conv2D(64, kernel_size=4, padding=self.block1_padding, activation=self.block1_activation,
 									name=self.block1_name + '_conv3')
 		self.block1_b_norm_4 = BatchNormalization(name=self.block1_name + '_b_norm_4')
 		self.block1_add = Add(name=self.block1_name + '_add')
