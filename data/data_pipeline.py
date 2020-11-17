@@ -101,9 +101,9 @@ class Pipeline:
 			_eeg_path, _inet_path = self.combined_list[self.gen_count]
 			# Reads signals from .csv and converting to NumPy array
 			_eeg_sig = pd.read_csv(_eeg_path, header=None, index_col=0).values
-			# Removing first 32 sample and reading total (32*11 + 16) sample from signals
+			# Removing first 32 sample and reading total (32*10) sample from signals
 			# This process needed for removing some noise from data
-			_eeg_sig = _eeg_sig[:, 32:378]
+			_eeg_sig = _eeg_sig[:, 32:352]
 			# Min-Max normalization within channel
 			_eeg_sig = np.asarray(
 				[(_channel - np.min(_channel)) / (np.max(_channel) - np.min(_channel)) for _channel in _eeg_sig],
