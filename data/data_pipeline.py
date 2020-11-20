@@ -105,10 +105,7 @@ class Pipeline:
             # This process needed for removing some noise from data
             _eeg_sig = _eeg_sig[:, 32:352]
             # Min-Max normalization within channel
-            _eeg_sig = np.asarray(
-                [(_channel - np.min(_channel)) / (np.max(_channel) - np.min(_channel)) for _channel in _eeg_sig],
-                dtype=np.float32
-            )
+            _eeg_sig = np.asarray(_eeg_sig, dtype=np.float32)
             _eeg_sig = _eeg_sig.T
             _eeg_sig = _eeg_sig[np.newaxis, :, :]
             # Reading and resizing image to (224, 224). This resolution is compatible with most of state of art model
@@ -119,7 +116,7 @@ class Pipeline:
             # Creating batch channel
             _img = np.asarray(_img, dtype=np.float32)[np.newaxis, :, :, :]
             # Min-Max normalization in image
-            _img = (_img - np.min(_img)) / (np.max(_img) - np.min(_img))
+            _img = (_img - 127.5) / 127.5
             _img_sig = [_eeg_sig, _img]
             yield _img_sig
 
