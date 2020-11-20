@@ -18,89 +18,82 @@
 # SOFTWARE.
 
 import matplotlib.pyplot as plt
-import numpy as np
 import tensorflow as tf
+tf.executing_eagerly()
 
 from data.data_pipeline import Pipeline
-from model.net import AdverserialNet
+from model.net import GeneratorNet, DiscriminatorNet
+from model.custom_losses import discriminator_loss, generator_loss
 
 
 class Train:
-	def __init__(self, model: AdverserialNet, data: Pipeline, epoch=50, batch_size=1):
-		self.pipeline = data
-		# Training parameters
-		self.epoch = epoch
-		self.batch_size = batch_size
-		self.step_size = self.pipeline.total_record // self.batch_size
-		# Main adverserial and sub-models
-		self.adverserial = model
-		self.discriminator = self.adverserial.discriminator_net
-		self.generator = self.adverserial.generator_net
-		self.encoder = self.generator.encoder_net
-		self.decoder = self.generator.decoder_net
-		# Optimizers
-		self.discriminator_opt = tf.keras.optimizers.Adam(learning_rate=0.0005)
-		self.adverserial_opt = tf.keras.optimizers.Adam(learning_rate=0.001)
-		# Loss function
-		self.loss_func = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-		# Metrics
-		self.discriminator_acc = tf.keras.metrics.BinaryAccuracy()
-		self.adversarial_acc = tf.keras.metrics.BinaryAccuracy()
-		# History logs
-		self.discriminator_hist = []
-		self.adversarial_hist = []
+    def __init__(self, disc_model: DiscriminatorNet, gen_model: GeneratorNet,
+                 disc_loss, gen_loss,
+                 data: Pipeline):
+        self.pipeline = data
+        # Training parameters
+        self.step_size = None
+        # Main models
+        self.discriminator = disc_model
+        self.generator = gen_model
+        # Optimizers
+        self.discriminator_opt = tf.keras.optimizers.Adam(learning_rate=0.0005)
+        self.generator_opt = tf.keras.optimizers.Adam(learning_rate=0.0002)
+        # Loss function
+        self.discriminator_loss = disc_loss
+        self.generator_loss = gen_loss
+        # Metrics
+        self.discriminator_acc = tf.keras.metrics.BinaryAccuracy()
+        self.adversarial_acc = tf.keras.metrics.BinaryAccuracy()
+        # History logs
+        self.history = {
+            'disc_loss': [],
+            'gen_loss': []
+        }
 
-	@tf.function
-	def discriminator_train_step(self, x, y):
-		with tf.GradientTape() as tape:
-			disc_logits = self.discriminator(x, training=True)
-			loss_value = self.loss_func(y, disc_logits)
-		grads = tape.gradient(loss_value, self.discriminator.trainable_weights)
-		self.discriminator_opt.apply_gradients(zip(grads, self.discriminator.trainable_weights))
-		self.discriminator_acc.update_state(y, disc_logits)
-		self.discriminator_hist.append([loss_value])
-		return loss_value
+    def train_step(self, raw_signal, real_images):
+        with tf.GradientTape() as g_tape, tf.GradientTape() as d_tape:
+            # run the generator with the random noise batch
+            gen_out = self.generator(raw_signal, is_training=True)
 
-	@tf.function
-	def adversarial_train_step(self, x, y):
-		with tf.GradientTape() as tape:
-			gen_out = self.generator(x, training=True)
-			disc_logits = self.discriminator(gen_out, training=False)
-			loss_value = self.loss_func(y, disc_logits)
-		grads = tape.gradient(loss_value, self.generator.trainable_weights)
-		self.adverserial_opt.apply_gradients(zip(grads, self.generator.trainable_weights))
-		self.adversarial_acc.update_state(y, disc_logits)
-		self.adversarial_hist.append([loss_value])
-		return loss_value
+            # run the discriminator with real input images
+            d_logits_real = self.discriminator(real_images, is_training=True)
+            # run the discriminator with fake input images (images from the generator)
+            d_logits_fake = self.discriminator(gen_out, is_training=True)
 
-	@tf.function
-	def train_on_batch(self, real_image, raw_signal):
-		# Creating labels
-		labels = tf.concat([tf.ones((self.batch_size, 1)), tf.zeros((real_image.shape[0], 1))], axis=0)
-		# Add random noise to the labels for regularization
-		labels += 0.05 * tf.random.uniform(labels.shape)
-		generated_im = self.generator(raw_signal)
-		combined_images = tf.concat([generated_im, real_image], axis=0)
-		loss_disc = self.discriminator_train_step(combined_images, labels)
-		fake_labels = tf.ones(shape=(self.batch_size, 1))
-		loss_gen = self.adversarial_train_step(raw_signal, fake_labels)
-		return loss_disc, loss_gen, generated_im
+            # compute the generator loss
+            gen_loss = self.generator_loss(d_logits_fake)
+            # compute the discriminator loss
+            disc_loss = self.discriminator_loss(d_logits_real, d_logits_fake)
+        g_grads = g_tape.gradient(gen_loss, self.generator.trainable_weights)
+        d_grads = d_tape.gradient(disc_loss, self.discriminator.trainable_weights)
 
-	def train(self):
-		for epoch in range(self.epoch):
-			print(f"Epoch: {epoch}")
-			for step in range(self.step_size):
-				eeg_signal, image = next(self.pipeline.generator)
-				disc_loss, gen_loss, generated_im = self.train_on_batch(image, eeg_signal)
-				if step % 100 == 0 and step != 0:
-					print(f"Step: {step}")
-					print(f"discriminator_loss:{np.array(disc_loss):.4f}\t generator_loss:{np.array(gen_loss):.4f}\n")
-					plt.imshow(generated_im[0, :, :, :])
-					plt.show()
+        self.discriminator_opt.apply_gradients(zip(d_grads, self.discriminator.trainable_weights))
+        self.generator_opt.apply_gradients(zip(g_grads, self.generator.trainable_weights))
+        self.history['disc_loss'].append(disc_loss), self.history['gen_loss'].append(gen_loss)
+        return gen_out
+
+    def train(self, epoch, batch_size):
+        self.step_size = self.pipeline.total_record // batch_size
+        for e in range(epoch):
+            print(f"Epoch: {e}")
+            for s in range(self.step_size):
+                eeg_signal, image = next(self.pipeline.generator)
+                generated_im = self.train_step(eeg_signal, image)
+                if s % 50 == 0 and s != 0:
+                    print(f"Step: {s}")
+                    print(f"discriminator_loss:{self.history['disc_loss'][-1]:.4f}"
+                          f"\tgenerator_loss:{self.history['gen_loss'][-1]:.4f}\n")
+                    plt.imshow(generated_im[0, :, :, :])
+                    plt.show()
 
 
 if __name__ == '__main__':
-	pipeline = Pipeline('data/dataset.csv', shuffle=10)
-	adv_net = AdverserialNet(batch_shape=(1, 345, 5))
-	trainer = Train(model=adv_net, data=pipeline)
-	trainer.train()
+    pipeline = Pipeline('data/dataset.csv', shuffle=10)
+    gen = GeneratorNet(shape=(320, 5))
+    disc = DiscriminatorNet(shape=(256, 256, 3))
+
+    trainer = Train(disc_model=disc, gen_model=gen,
+                    disc_loss=discriminator_loss, gen_loss=generator_loss,
+                    data=pipeline)
+    trainer.train(epoch=25, batch_size=1)
