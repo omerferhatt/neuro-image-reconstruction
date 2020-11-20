@@ -208,6 +208,7 @@ class DiscriminatorNet(tf.keras.Model):
         x = self.block6_conv2d(x)
         x = self.block6_global_avg(x)
         x = self.block6_dense(x)
+
         return x
 
     def get_config(self):

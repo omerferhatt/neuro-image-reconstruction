@@ -38,8 +38,8 @@ class Train:
         self.discriminator = disc_model
         self.generator = gen_model
         # Optimizers
-        self.discriminator_opt = tf.keras.optimizers.Adam(learning_rate=0.0005)
-        self.generator_opt = tf.keras.optimizers.Adam(learning_rate=0.0002)
+        self.discriminator_opt = tf.keras.optimizers.Adam(learning_rate=0.0004, beta_1=0.5, beta_2=0.9)
+        self.generator_opt = tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.5, beta_2=0.9)
         # Loss function
         self.discriminator_loss = disc_loss
         self.generator_loss = gen_loss
@@ -77,11 +77,11 @@ class Train:
     def train(self, epoch, batch_size):
         self.step_size = self.pipeline.total_record // batch_size
         for e in range(epoch):
-            print(f"Epoch: {e}")
+            print(f"Epoch: {e+1}")
             for s in range(self.step_size):
                 eeg_signal, image = next(self.pipeline.generator)
                 generated_im = self.train_step(eeg_signal, image)
-                if s % 50 == 0 and s != 0:
+                if s % 200 == 0 and s != 0:
                     print(f"Step: {s}")
                     print(f"discriminator_loss:{self.history['disc_loss'][-1]:.4f}"
                           f"\tgenerator_loss:{self.history['gen_loss'][-1]:.4f}\n")
