@@ -19,9 +19,8 @@
 
 
 import tensorflow as tf
-from tensorflow_addons.layers import SpectralNormalization
 from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.layers import ReLU
+from tensorflow_addons.layers import SpectralNormalization
 
 
 class CustomConvBlock(tf.keras.layers.Layer):
@@ -33,12 +32,12 @@ class CustomConvBlock(tf.keras.layers.Layer):
         self.conv_type = conv
         self.activation_type = activation
         if not spectral_norm:
-            self.conv = self.conv_type(filters, kernel_size, stride, padding, name=name+'_conv')
+            self.conv = self.conv_type(filters, kernel_size, stride, padding, name=name + '_conv')
         if spectral_norm:
-            self.sn = SpectralNormalization(self.conv_type(filters, kernel_size, stride, padding, name=name+'_conv'),
-                                            name=name+'_conv_sn')
+            self.sn = SpectralNormalization(self.conv_type(filters, kernel_size, stride, padding, name=name + '_conv'),
+                                            name=name + '_conv_sn')
         if batch_norm:
-            self.bn = BatchNormalization(name=name+'_bn')
+            self.bn = BatchNormalization(name=name + '_bn')
         self.relu = self.activation_type(name=name + '_act')
 
     def call(self, inputs, *args, **kwargs):

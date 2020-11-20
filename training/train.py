@@ -19,6 +19,7 @@
 
 import matplotlib.pyplot as plt
 import tensorflow as tf
+
 tf.executing_eagerly()
 
 from data.data_pipeline import Pipeline

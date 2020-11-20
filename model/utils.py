@@ -19,20 +19,19 @@
 
 import tensorflow as tf
 
+@tf.function
+def custom_l2_norm(x, epsilon=1e-12):
+    return x / (tf.reduce_sum(x ** 2) ** 0.5 + epsilon)
 
-# @tf.function
-# def custom_l2_norm(x, epsilon=1e-12):
-#     return x / (tf.reduce_sum(x ** 2) ** 0.5 + epsilon)
-#
-#
-# @tf.function
-# def power_iteration(weights, u, rounds=1):
-#     _u = u
-#     _v = None
-#
-#     for i in range(rounds):
-#         _v = custom_l2_norm(tf.tensordot(_u, weights))
-#         _u = custom_l2_norm(tf.tensordot(_v, tf.transpose(weights)))
-#
-#     weights_sn = tf.reduce_sum(tf.tensordot(_u, weights) * _v)
-#     return weights_sn, _u, _v
+
+@tf.function
+def power_iteration(weights, u, rounds=1):
+    _u = u
+    _v = None
+
+    for i in range(rounds):
+        _v = custom_l2_norm(tf.tensordot(_u, weights))
+        _u = custom_l2_norm(tf.tensordot(_v, tf.transpose(weights)))
+
+    weights_sn = tf.reduce_sum(tf.tensordot(_u, weights) * _v)
+    return weights_sn, _u, _v

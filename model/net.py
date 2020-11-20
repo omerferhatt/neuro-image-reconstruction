@@ -18,12 +18,12 @@
 # SOFTWARE.
 
 import tensorflow as tf
-from tensorflow.keras.layers import Reshape
 from tensorflow.keras.layers import Conv1D, Conv2D
-from tensorflow.keras.layers import Input, Dense
-from tensorflow.keras.layers import MaxPool1D, UpSampling2D, GlobalAvgPool2D
 from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.layers import LeakyReLU, ReLU
+from tensorflow.keras.layers import MaxPool1D, UpSampling2D, GlobalAvgPool2D
+from tensorflow.keras.layers import Reshape
 from tensorflow_addons.layers import SpectralNormalization
 
 from model.custom_layers import CustomConvBlock, CustomTanH

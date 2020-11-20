@@ -18,6 +18,7 @@
 # SOFTWARE.
 
 import tensorflow as tf
+
 tf.executing_eagerly()
 
 
