@@ -85,8 +85,10 @@ class Train:
                     print(f"Step: {s}")
                     print(f"discriminator_loss:{self.history['disc_loss'][-1]:.4f}"
                           f"\tgenerator_loss:{self.history['gen_loss'][-1]:.4f}\n")
-                    plt.imshow(generated_im[0, :, :, :])
-                    plt.show()
+                    fig, ax = plt.subplots(nrows=1, ncols=2)
+                    ax[0].imshow(generated_im[0, :, :, :])
+                    ax[1].imshow(image[0, :, :, :])
+                    fig.savefig('train_step.png', dpi=600)
 
 
 if __name__ == '__main__':
