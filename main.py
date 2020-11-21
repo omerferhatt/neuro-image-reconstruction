@@ -29,7 +29,5 @@ pipeline = Pipeline('data/dataset.csv', shuffle=10)
 gen = GeneratorNet(shape=(320, 5))
 disc = DiscriminatorNet(shape=(256, 256, 3))
 
-trainer = Train(disc_model=disc, gen_model=gen,
-                disc_loss=discriminator_loss, gen_loss=generator_loss,
-                data=pipeline)
+trainer = Train(disc_model=disc, gen_model=gen, data=pipeline)
 trainer.train(epoch=25, batch_size=1)

@@ -56,3 +56,23 @@ class CustomTanH(tf.keras.layers.Layer):
 
     def call(self, inputs, *args, **kwargs):
         return tf.nn.tanh(inputs)
+
+
+class CustomKLDivergence(tf.keras.layers.Layer):
+    def __init__(self, *args, **kwargs):
+        self.is_placeholder = True
+        super(CustomKLDivergence, self).__init__(*args, **kwargs)
+
+    def call(self, inputs, *args, **kwargs):
+        mu, log_var = inputs
+        kl_batch = - .5 * tf.reduce_sum(1 + log_var - tf.square(mu) - tf.exp(log_var), axis=-1)
+        self.add_loss(tf.reduce_mean(kl_batch), inputs=inputs)
+        return inputs
+
+
+class CustomLogVarNorm(tf.keras.layers.Layer):
+    def __init__(self, *args, **kwargs):
+        super(CustomLogVarNorm, self).__init__(*args, **kwargs)
+
+    def call(self, inputs, *args, **kwargs):
+        return tf.exp(.5 * inputs)

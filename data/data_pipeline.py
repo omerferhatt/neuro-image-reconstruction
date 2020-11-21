@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os
 import random
 
 import matplotlib.pyplot as plt
@@ -29,7 +28,7 @@ import pandas as pd
 from PIL import Image
 
 # All paths will be relative to root folder of project
-os.chdir('../')
+
 DATASET_CSV_PATH = 'data/dataset.csv'
 
 
@@ -105,7 +104,11 @@ class Pipeline:
             # This process needed for removing some noise from data
             _eeg_sig = _eeg_sig[:, 32:352]
             # Min-Max normalization within channel
-            _eeg_sig = np.asarray(_eeg_sig, dtype=np.float32)
+            # _eeg_sig = np.asarray((_eeg_sig - np.mean(_eeg_sig) / np.std(_eeg_sig)), dtype=np.float32)
+            _eeg_sig = np.asarray(
+                [(_channel - np.min(_channel)) / (np.max(_channel) - np.min(_channel)) for _channel in _eeg_sig],
+                dtype=np.float32
+            )
             _eeg_sig = _eeg_sig.T
             _eeg_sig = _eeg_sig[np.newaxis, :, :]
             # Reading and resizing image to (224, 224). This resolution is compatible with most of state of art model
@@ -126,7 +129,7 @@ class Pipeline:
 
 def visualize(signal, img, signal_channel=0, show_results=True, save_path=None):
     """Visualize image and related EEG signal with one channel"""
-    fig, axs = plt.subplots(ncols=1, nrows=2, figsize=(12, 5), dpi=300)
+    fig, axs = plt.subplots(ncols=1, nrows=2, figsize=(12, 5), dpi=200)
     axs[0].imshow(img[0, :, :, :])
     axs[1].plot(signal[signal_channel, :])
     if show_results:

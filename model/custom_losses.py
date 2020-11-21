@@ -19,14 +19,24 @@
 
 import tensorflow as tf
 
-tf.executing_eagerly()
+
+cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
 
 def discriminator_loss(d_logits_real, d_logits_fake):
-    real_loss = tf.reduce_mean(tf.nn.relu(1. - d_logits_real))
-    fake_loss = tf.reduce_mean(tf.nn.relu(1. + d_logits_fake))
-    return real_loss + fake_loss
+    real_loss = cross_entropy(tf.ones_like(d_logits_real), d_logits_real)
+    fake_loss = cross_entropy(tf.zeros_like(d_logits_fake), d_logits_fake)
+    total_loss = real_loss + fake_loss
+    return total_loss
 
 
 def generator_loss(d_logits_fake):
-    return - tf.reduce_mean(d_logits_fake)
+    return cross_entropy(tf.ones_like(d_logits_fake), d_logits_fake)
+
+
+def nll(y_true, y_pred):
+    """ Negative log likelihood (Bernoulli). """
+
+    # keras.losses.binary_crossentropy gives the mean
+    # over the last axis. we require the sum
+    return tf.reduce_sum(tf.metrics.binary_crossentropy(y_true, y_pred), axis=-1)

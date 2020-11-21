@@ -10,7 +10,6 @@
 .idea/shelf/
 .tmp/
 
-notebooks/
 data/mind-big-data
 /data/imagenet/
 /data/mind-big-data-imagenet/

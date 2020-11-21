@@ -19,20 +19,17 @@
 
 import tensorflow as tf
 from tensorflow.keras.layers import Conv1D, Conv2D
-from tensorflow.keras.layers import Flatten
-from tensorflow.keras.layers import Input, Dense
+from tensorflow.keras.layers import Input, Dense, Multiply, Add, Reshape
 from tensorflow.keras.layers import LeakyReLU, ReLU
-from tensorflow.keras.layers import MaxPool1D, UpSampling2D, GlobalAvgPool2D
-from tensorflow.keras.layers import Reshape
+from tensorflow.keras.layers import MaxPool1D, UpSampling2D, GlobalAvgPool1D, GlobalAvgPool2D
 from tensorflow_addons.layers import SpectralNormalization
 
-from model.custom_layers import CustomConvBlock, CustomTanH
+from model.custom_layers import CustomConvBlock, CustomTanH, CustomKLDivergence, CustomLogVarNorm
 
 
 class EncoderNet(tf.keras.Model):
     def __init__(self, *args, **kwargs):
         super(EncoderNet, self).__init__(*args, **kwargs)
-        # Input layer of model
         self.block1_conv1d = CustomConvBlock(Conv1D, filters=32, kernel_size=13, stride=1, padding='same',
                                              spectral_norm=False, batch_norm=True, activation=ReLU, name='en_block1')
         self.block1_max_pool = MaxPool1D(name='en_block1_max_pool')
@@ -51,7 +48,7 @@ class EncoderNet(tf.keras.Model):
 
         self.block5_conv1d = CustomConvBlock(Conv1D, filters=512, kernel_size=5, stride=1, padding='same',
                                              spectral_norm=False, batch_norm=True, activation=ReLU, name='en_block5')
-        self.block5_flatten = Flatten(name='en_block5_flatten')
+        self.block5_flatten = GlobalAvgPool1D(name='en_block5_global_avg')
 
     def call(self, inputs, *args, **kwargs):
         # Conv1D Block 1
@@ -99,8 +96,7 @@ class DecoderNet(tf.keras.Model):
         self.block5_up_sample = UpSampling2D(name='de_block5_up_sample')
 
         self.block6_conv2d = CustomConvBlock(Conv2D, filters=8, kernel_size=3, stride=1, padding='same',
-                                             spectral_norm=True, batch_norm=True, activation=ReLU,
-                                             name='de_block6')
+                                             spectral_norm=True, batch_norm=True, activation=ReLU, name='de_block6')
         self.block6_up_sample = UpSampling2D(name='de_block6_up_sample')
 
         self.block7_conv2d = CustomConvBlock(Conv2D, filters=3, kernel_size=4, stride=1, padding='same',
@@ -139,24 +135,39 @@ class GeneratorNet(tf.keras.Model):
         super(GeneratorNet, self).__init__(*args, **kwargs)
         self.input_generator = Input(shape=shape, name='input_generator')
         self.encoder_net = EncoderNet()
-        self.reshape = Reshape(target_shape=(4, 4, 640))
-        self.decoder_net = DecoderNet()
 
-        self.out = self.call(self.input_generator)
-        super(GeneratorNet, self).__init__(inputs=self.input_generator, outputs=self.out,
+        self.dense_enc = Dense(512, activation='relu')
+        self.mu, self.log_var = Dense(256), Dense(256)
+        self.kl_divergence = CustomKLDivergence()
+        self.log_var_norm = CustomLogVarNorm()
+        self.eps = Input(shape=(256,))
+        self.multiply = Multiply()
+        self.add = Add()
+        self.reshape = Reshape(target_shape=(4, 4, 16))
+        self.decoder_net = DecoderNet()
+        self.eps_tensor = tf.random.normal(shape=(1, 256))
+        self.out = self.call([self.input_generator, self.eps_tensor])
+        super(GeneratorNet, self).__init__(inputs=[self.input_generator, self.eps], outputs=self.out,
                                            name='generator_net', *args, **kwargs)
 
     def build(self, *args, **kwargs):
         self._is_graph_network = True
         self._init_graph_network(
-            inputs=self.input_generator,
+            inputs=[self.input_generator, self.eps],
             outputs=self.out
         )
 
     def call(self, inputs, *args, **kwargs):
-        x = self.encoder_net(inputs)
-        x = self.reshape(x)
-        x = self.decoder_net(x)
+        x = self.encoder_net(inputs[0])
+        hidden_enc = self.dense_enc(x)
+        z_mu = self.mu(hidden_enc)
+        z_log_var = self.log_var(hidden_enc)
+        z_mu, z_log_var = self.kl_divergence([z_mu, z_log_var])
+        z_sigma = self.log_var_norm(z_log_var)
+        z_eps = self.multiply([z_sigma, inputs[1]])
+        z = self.add([z_mu, z_eps])
+        z_shaped = self.reshape(z)
+        x = self.decoder_net(z_shaped)
         return x
 
     def get_config(self):
@@ -216,7 +227,7 @@ class DiscriminatorNet(tf.keras.Model):
 
 
 if __name__ == '__main__':
-    # gen = GeneratorNet(shape=(320, 5))
-    # gen.summary()
-    disc = DiscriminatorNet(input_shape=(256, 256, 3))
+    gen = GeneratorNet(shape=(320, 5))
+    gen.summary()
+    disc = DiscriminatorNet(shape=(256, 256, 3))
     disc.summary()
