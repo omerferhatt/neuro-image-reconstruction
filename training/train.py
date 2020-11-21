@@ -77,7 +77,7 @@ class Train:
                 eeg_signal, image = next(self.pipeline.generator)
                 generated_image, d_loss, g_loss = self.train_step(eeg_signal, image)
                 if s % 200 == 0 and s != 0:
-                    print(f"Step: {s}"
+                    print(f"Step: {s}\t"
                           f"discriminator_loss:{d_loss:.4f}\tgenerator_loss:{g_loss:.4f}\n")
                     self.visualize_result(image, generated_image)
 
@@ -89,4 +89,4 @@ class Train:
         ax[0].imshow(temp_image)
         ax[1].imshow(temp_generated)
         fig.savefig('train_step.png', dpi=200)
-        fig.close()
+        plt.close('all')
