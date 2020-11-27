@@ -19,7 +19,6 @@
 
 import tensorflow as tf
 
-
 cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
 

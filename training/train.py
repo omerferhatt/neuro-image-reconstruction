@@ -18,18 +18,15 @@
 # SOFTWARE.
 
 import matplotlib.pyplot as plt
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 from data.data_pipeline import Pipeline
-from model.net import GeneratorNet, DiscriminatorNet
 from model.custom_losses import discriminator_loss, generator_loss
-
-tf.executing_eagerly()
 
 
 class Train:
-    def __init__(self, disc_model: DiscriminatorNet, gen_model: GeneratorNet, data: Pipeline):
+    def __init__(self, disc_model, gen_model, data: Pipeline):
         self.pipeline = data
         # Main models
         self.discriminator = disc_model
@@ -49,14 +46,11 @@ class Train:
     def train_step(self, raw_signal, real_images):
         with tf.GradientTape() as g_tape, tf.GradientTape() as d_tape:
             # run the generator with the random noise batch
-            eps = tf.random.normal(shape=(1, 256))
-            gen_out = self.generator([raw_signal, eps], training=True)
-
+            gen_out = self.generator(raw_signal, training=True)
             # run the discriminator with real input images
             d_logits_real = self.discriminator(real_images, training=True)
             # run the discriminator with fake input images (images from the generator)
             d_logits_fake = self.discriminator(gen_out, training=True)
-
             # compute the generator loss
             gen_loss = self.generator_loss(d_logits_fake)
             # compute the discriminator loss
@@ -72,7 +66,7 @@ class Train:
     def train(self, epoch, batch_size):
         step_size = self.pipeline.total_record // batch_size
         for e in range(epoch):
-            print(f"Epoch: {e+1}")
+            print(f"Epoch: {e + 1}")
             for s in range(step_size):
                 eeg_signal, image = next(self.pipeline.generator)
                 generated_image, d_loss, g_loss = self.train_step(eeg_signal, image)

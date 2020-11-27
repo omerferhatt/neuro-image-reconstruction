@@ -21,13 +21,11 @@
 # SOFTWARE.
 
 from data.data_pipeline import Pipeline
-from model.net import GeneratorNet, DiscriminatorNet
 from training.train import Train
-from model.custom_losses import discriminator_loss, generator_loss
 
 pipeline = Pipeline('data/dataset.csv', shuffle=10)
-gen = GeneratorNet(shape=(320, 5))
-disc = DiscriminatorNet(shape=(256, 256, 3))
+# gen = GeneratorNet(shape=(320, 5))
+# disc = DiscriminatorNet(shape=(256, 256, 3))
 
-trainer = Train(disc_model=disc, gen_model=gen, data=pipeline)
-trainer.train(epoch=25, batch_size=1)
+# trainer = Train(disc_model=disc, gen_model=gen, data=pipeline)
+# trainer.train(epoch=25, batch_size=1)

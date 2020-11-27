@@ -18,216 +18,119 @@
 # SOFTWARE.
 
 import tensorflow as tf
-from tensorflow.keras.layers import Conv1D, Conv2D
-from tensorflow.keras.layers import Input, Dense, Multiply, Add, Reshape
-from tensorflow.keras.layers import LeakyReLU, ReLU
-from tensorflow.keras.layers import MaxPool1D, UpSampling2D, GlobalAvgPool1D, GlobalAvgPool2D
-from tensorflow_addons.layers import SpectralNormalization
-
-from model.custom_layers import CustomConvBlock, CustomTanH, CustomKLDivergence, CustomLogVarNorm
+from tensorflow.keras.layers import Add, Reshape, Concatenate
+from tensorflow.keras.layers import BatchNormalization, Dropout
+from tensorflow.keras.layers import Input, Conv1D, Conv2D, Conv2DTranspose, Dense
+from tensorflow.keras.layers import MaxPool1D, GlobalMaxPool1D
+from tensorflow.keras.models import Model
 
 
-class EncoderNet(tf.keras.Model):
-    def __init__(self, *args, **kwargs):
-        super(EncoderNet, self).__init__(*args, **kwargs)
-        self.block1_conv1d = CustomConvBlock(Conv1D, filters=32, kernel_size=13, stride=1, padding='same',
-                                             spectral_norm=False, batch_norm=True, activation=ReLU, name='en_block1')
-        self.block1_max_pool = MaxPool1D(name='en_block1_max_pool')
+class FeatureExtractor:
+    def __init__(self, input_shape=(320, 5)):
+        self.input_shape = input_shape
+        self.model = self.get_model()
 
-        self.block2_conv1d = CustomConvBlock(Conv1D, filters=64, kernel_size=11, stride=1, padding='same',
-                                             spectral_norm=False, batch_norm=True, activation=ReLU, name='en_block2')
-        self.block2_max_pool = MaxPool1D(name='en_block2_max_pool')
+    def get_model(self):
+        inp = Input(shape=self.input_shape)
 
-        self.block3_conv1d = CustomConvBlock(Conv1D, filters=128, kernel_size=9, stride=1, padding='same',
-                                             spectral_norm=False, batch_norm=True, activation=ReLU, name='en_block3')
-        self.block3_max_pool = MaxPool1D(name='en_block3_max_pool')
+        x_b1_out1 = Conv1D(128, kernel_size=13, strides=1, padding='same', activation='relu')(inp)
+        x_b1_out1 = BatchNormalization()(x_b1_out1)
+        x_b1_out2 = Conv1D(128, kernel_size=9, strides=1, padding='same', activation='relu')(inp)
+        x_b1_out2 = BatchNormalization()(x_b1_out2)
+        x_b1_out = Concatenate(axis=-1)([x_b1_out1, x_b1_out2])
+        x = MaxPool1D()(x_b1_out)
 
-        self.block4_conv1d = CustomConvBlock(Conv1D, filters=256, kernel_size=7, stride=1, padding='same',
-                                             spectral_norm=False, batch_norm=True, activation=ReLU, name='en_block4')
-        self.block4_max_pool = MaxPool1D(name='en_block4_max_pool')
+        x_b2_out1 = Conv1D(128, kernel_size=9, strides=1, padding='same', activation='relu')(x)
+        x_b2_out1 = BatchNormalization()(x_b2_out1)
+        x_b2_out2 = Conv1D(128, kernel_size=7, strides=1, padding='same', activation='relu')(x)
+        x_b2_out2 = BatchNormalization()(x_b2_out2)
+        x_b2_out3 = Conv1D(128, kernel_size=5, strides=1, padding='same', activation='relu')(x)
+        x_b2_out3 = BatchNormalization()(x_b2_out3)
+        x_b2_out = Concatenate(axis=-1)([x_b2_out1, x_b2_out2, x_b2_out3])
+        x = MaxPool1D()(x_b2_out)
 
-        self.block5_conv1d = CustomConvBlock(Conv1D, filters=512, kernel_size=5, stride=1, padding='same',
-                                             spectral_norm=False, batch_norm=True, activation=ReLU, name='en_block5')
-        self.block5_flatten = GlobalAvgPool1D(name='en_block5_global_avg')
+        x_b3_out1 = Conv1D(64, kernel_size=7, strides=1, padding='same', activation='relu')(x)
+        x_b3_out1 = BatchNormalization()(x_b3_out1)
+        x_b3_out2 = Conv1D(64, kernel_size=7, strides=1, padding='same', activation='relu')(x_b3_out1)
+        x_b3_out2 = BatchNormalization()(x_b3_out2)
+        x_b3_out = Add()([x_b3_out1, x_b3_out2])
+        x = MaxPool1D()(x_b3_out)
 
-    def call(self, inputs, *args, **kwargs):
-        # Conv1D Block 1
-        x = self.block1_conv1d(inputs)
-        x = self.block1_max_pool(x)
-        # Conv1D Block 2
-        x = self.block2_conv1d(x)
-        x = self.block2_max_pool(x)
-        # Conv1D Block 3
-        x = self.block3_conv1d(x)
-        x = self.block3_max_pool(x)
-        # Conv1D Block 4
-        x = self.block4_conv1d(x)
-        x = self.block4_max_pool(x)
-        # Conv1D Block 5
-        x = self.block5_conv1d(x)
-        x = self.block5_flatten(x)
-        return x
+        x_b4_out1 = Conv1D(32, kernel_size=7, strides=1, padding='same', activation='relu')(x)
+        x_b4_out1 = BatchNormalization()(x_b4_out1)
+        x_b4_out2 = Conv1D(32, kernel_size=7, strides=1, padding='same', activation='relu')(x_b4_out1)
+        x_b4_out2 = BatchNormalization()(x_b4_out2)
+        x_b4_out = Add()([x_b4_out1, x_b4_out2])
+        x = MaxPool1D()(x_b4_out)
 
-    def get_config(self):
-        pass
+        x_b5_out1 = Conv1D(32, kernel_size=5, strides=1, padding='same', activation='relu')(x)
+        x_b5_out1 = BatchNormalization()(x_b5_out1)
+        x_b5_out2 = Conv1D(32, kernel_size=5, strides=1, padding='same', activation='relu')(x_b5_out1)
+        x_b5_out2 = BatchNormalization()(x_b5_out2)
+        x_b5_out = Add()([x_b5_out1, x_b5_out2])
+        x = GlobalMaxPool1D()(x_b5_out)
 
+        x = Dense(32, activation='tanh')(x)
+        x = Dropout(0.1)(x)
+        out = Dense(16, activation='sigmoid')(x)
 
-class DecoderNet(tf.keras.Model):
-    def __init__(self, *args, **kwargs):
-        super(DecoderNet, self).__init__(*args, **kwargs)
-        self.block1_conv2d = CustomConvBlock(Conv2D, filters=256, kernel_size=3, stride=1, padding='same',
-                                             spectral_norm=True, batch_norm=True, activation=ReLU, name='de_block1')
-        self.block1_up_sample = UpSampling2D(name='de_block1_up_sample')
-
-        self.block2_conv2d = CustomConvBlock(Conv2D, filters=128, kernel_size=3, stride=1, padding='same',
-                                             spectral_norm=True, batch_norm=True, activation=ReLU, name='de_block2')
-        self.block2_up_sample = UpSampling2D(name='de_block2_up_sample')
-
-        self.block3_conv2d = CustomConvBlock(Conv2D, filters=64, kernel_size=3, stride=1, padding='same',
-                                             spectral_norm=True, batch_norm=True, activation=ReLU, name='de_block3')
-        self.block3_up_sample = UpSampling2D(name='de_block3_up_sample')
-
-        self.block4_conv2d = CustomConvBlock(Conv2D, filters=32, kernel_size=3, stride=1, padding='same',
-                                             spectral_norm=True, batch_norm=True, activation=ReLU, name='de_block4')
-        self.block4_up_sample = UpSampling2D(name='de_block4_up_sample')
-
-        self.block5_conv2d = CustomConvBlock(Conv2D, filters=16, kernel_size=3, stride=1, padding='same',
-                                             spectral_norm=True, batch_norm=True, activation=ReLU, name='de_block5')
-        self.block5_up_sample = UpSampling2D(name='de_block5_up_sample')
-
-        self.block6_conv2d = CustomConvBlock(Conv2D, filters=8, kernel_size=3, stride=1, padding='same',
-                                             spectral_norm=True, batch_norm=True, activation=ReLU, name='de_block6')
-        self.block6_up_sample = UpSampling2D(name='de_block6_up_sample')
-
-        self.block7_conv2d = CustomConvBlock(Conv2D, filters=3, kernel_size=4, stride=1, padding='same',
-                                             spectral_norm=False, batch_norm=False, activation=CustomTanH,
-                                             name='de_block7')
-
-    def call(self, inputs, *args, **kwargs):
-        # Conv2D Block 1
-        x = self.block1_conv2d(inputs)
-        x = self.block1_up_sample(x)
-        # Conv2D Block 2
-        x = self.block2_conv2d(x)
-        x = self.block2_up_sample(x)
-        # Conv2D Block 3
-        x = self.block3_conv2d(x)
-        x = self.block3_up_sample(x)
-        # Conv2D Block 4
-        x = self.block4_conv2d(x)
-        x = self.block4_up_sample(x)
-        # Conv2D Block 5
-        x = self.block5_conv2d(x)
-        x = self.block5_up_sample(x)
-        # Conv2D Block 6
-        x = self.block6_conv2d(x)
-        x = self.block6_up_sample(x)
-        # Conv2D Block 7
-        x = self.block7_conv2d(x)
-        return x
-
-    def get_config(self):
-        pass
+        model = Model(inputs=inp, outputs=out)
+        return model
 
 
-class GeneratorNet(tf.keras.Model):
-    def __init__(self, shape, *args, **kwargs):
-        super(GeneratorNet, self).__init__(*args, **kwargs)
-        self.input_generator = Input(shape=shape, name='input_generator')
-        self.encoder_net = EncoderNet()
+class Generator:
+    def __init__(self, input_cond=(16,), input_rand=(100,)):
+        self.input_cond = input_cond
+        self.input_rand = input_rand
+        self.model = self.get_model()
 
-        self.dense_enc = Dense(512, activation='relu')
-        self.mu, self.log_var = Dense(256), Dense(256)
-        self.kl_divergence = CustomKLDivergence()
-        self.log_var_norm = CustomLogVarNorm()
-        self.eps = Input(shape=(256,))
-        self.multiply = Multiply()
-        self.add = Add()
-        self.reshape = Reshape(target_shape=(4, 4, 16))
-        self.decoder_net = DecoderNet()
-        self.eps_tensor = tf.random.normal(shape=(1, 256))
-        self.out = self.call([self.input_generator, self.eps_tensor])
-        super(GeneratorNet, self).__init__(inputs=[self.input_generator, self.eps], outputs=self.out,
-                                           name='generator_net', *args, **kwargs)
+    def get_model(self):
+        inp_cond = Input(shape=self.input_cond)
+        inp_rand = Input(shape=self.input_rand)
+        inp_concat = Concatenate()([inp_cond, inp_rand])
+        x = Dense(512, activation='relu')(inp_concat)
+        x = Reshape(target_shape=(4, 4, 32))(x)
+        x = Conv2DTranspose(256, (4, 4), strides=(2, 2), activation='relu', padding='same')(x)
+        x = BatchNormalization()(x)
+        x = Conv2DTranspose(256, (4, 4), strides=(2, 2), activation='relu', padding='same')(x)
+        x = BatchNormalization()(x)
+        x = Conv2DTranspose(128, (3, 3), strides=(2, 2), activation='relu', padding='same')(x)
+        x = BatchNormalization()(x)
+        x = Conv2DTranspose(64, (3, 3), strides=(2, 2), activation='relu', padding='same')(x)
+        x = BatchNormalization()(x)
+        x = Conv2DTranspose(32, (3, 3), strides=(2, 2), activation='relu', padding='same')(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(3, (7, 7), activation='tanh', padding='same')(x)
 
-    def build(self, *args, **kwargs):
-        self._is_graph_network = True
-        self._init_graph_network(
-            inputs=[self.input_generator, self.eps],
-            outputs=self.out
-        )
-
-    def call(self, inputs, *args, **kwargs):
-        x = self.encoder_net(inputs[0])
-        hidden_enc = self.dense_enc(x)
-        z_mu = self.mu(hidden_enc)
-        z_log_var = self.log_var(hidden_enc)
-        z_mu, z_log_var = self.kl_divergence([z_mu, z_log_var])
-        z_sigma = self.log_var_norm(z_log_var)
-        z_eps = self.multiply([z_sigma, inputs[1]])
-        z = self.add([z_mu, z_eps])
-        z_shaped = self.reshape(z)
-        x = self.decoder_net(z_shaped)
-        return x
-
-    def get_config(self):
-        pass
-
-
-class DiscriminatorNet(tf.keras.Model):
-    def __init__(self, shape, *args, **kwargs):
-        super(DiscriminatorNet, self).__init__(*args, **kwargs)
-        self.input_discriminator = Input(shape=shape, name='input_discriminator')
-        self.block1_conv2d = CustomConvBlock(Conv2D, filters=32, kernel_size=4, stride=2, padding='same',
-                                             spectral_norm=True, batch_norm=False, activation=LeakyReLU,
-                                             name='disc_block1')
-        self.block2_conv2d = CustomConvBlock(Conv2D, filters=64, kernel_size=4, stride=2, padding='same',
-                                             spectral_norm=True, batch_norm=False, activation=LeakyReLU,
-                                             name='disc_block2')
-        self.block3_conv2d = CustomConvBlock(Conv2D, filters=128, kernel_size=4, stride=2, padding='same',
-                                             spectral_norm=True, batch_norm=False, activation=LeakyReLU,
-                                             name='disc_block3')
-        self.block4_conv2d = CustomConvBlock(Conv2D, filters=256, kernel_size=4, stride=2, padding='same',
-                                             spectral_norm=True, batch_norm=False, activation=LeakyReLU,
-                                             name='disc_block4')
-        self.block5_conv2d = CustomConvBlock(Conv2D, filters=512, kernel_size=4, stride=2, padding='same',
-                                             spectral_norm=True, batch_norm=False, activation=LeakyReLU,
-                                             name='disc_block5')
-        self.block6_conv2d = CustomConvBlock(Conv2D, filters=512, kernel_size=4, stride=2, padding='same',
-                                             spectral_norm=True, batch_norm=False, activation=LeakyReLU,
-                                             name='disc_block6')
-        self.block6_global_avg = GlobalAvgPool2D(name='disc_block6_global_avg')
-        self.block6_dense = SpectralNormalization(Dense(1, name='disc_block6_dense'), name='disc_block6_dense')
-
-        self.out = self.call(self.input_discriminator)
-        super(DiscriminatorNet, self).__init__(inputs=self.input_discriminator, outputs=self.out,
-                                               name='discriminator_net', *args, **kwargs)
-
-    def build(self, *args, **kwargs):
-        self._is_graph_network = True
-        self._init_graph_network(
-            inputs=self.input_discriminator,
-            outputs=self.out
-        )
-
-    def call(self, inputs, *args, **kwargs):
-        x = self.block1_conv2d(inputs)
-        x = self.block2_conv2d(x)
-        x = self.block3_conv2d(x)
-        x = self.block4_conv2d(x)
-        x = self.block5_conv2d(x)
-        x = self.block6_conv2d(x)
-        x = self.block6_global_avg(x)
-        x = self.block6_dense(x)
-
-        return x
-
-    def get_config(self):
-        pass
+        model = Model(inputs=[inp_rand, inp_cond], outputs=x)
+        return model
 
 
 if __name__ == '__main__':
-    gen = GeneratorNet(shape=(320, 5))
-    gen.summary()
-    disc = DiscriminatorNet(shape=(256, 256, 3))
-    disc.summary()
+    # gen = GeneratorNet(shape=(320, 5))
+    # gen.summary()
+    # disc = DiscriminatorNet(shape=(256, 256, 3))
+    # disc.summary()
+    feature_extractor = FeatureExtractor(input_shape=(320, 5))
+    feature_extractor.model.summary()
+    tf.keras.utils.plot_model(
+        feature_extractor.model,
+        to_file="model_ext.png",
+        show_shapes=True,
+        show_layer_names=True,
+        rankdir="TB",
+        expand_nested=False,
+        dpi=96,
+    )
+
+    generator = Generator()
+    generator.model.summary()
+    tf.keras.utils.plot_model(
+        generator.model,
+        to_file="model_gen.png",
+        show_shapes=True,
+        show_layer_names=True,
+        rankdir="TB",
+        expand_nested=False,
+        dpi=96,
+    )

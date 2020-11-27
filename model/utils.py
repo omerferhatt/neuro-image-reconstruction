@@ -19,6 +19,7 @@
 
 import tensorflow as tf
 
+
 @tf.function
 def custom_l2_norm(x, epsilon=1e-12):
     return x / (tf.reduce_sum(x ** 2) ** 0.5 + epsilon)
